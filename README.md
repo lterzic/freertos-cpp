@@ -10,17 +10,18 @@ Add this project as a CMake dependency in your parent project's `CMakeLists.txt`
 FetchContent_Declare(
   freertos_cpp
   GIT_REPOSITORY https://github.com/lterzic/freertos-cpp.git
-  GIT_TAG main
+  GIT_TAG master
 )
 FetchContent_MakeAvailable(freertos_cpp)
 
 target_link_libraries(your_target freertos_cpp)
 ```
 
-You'll also need to provide a `FreeRTOSConfig.h` file. Create the `freertos_config` target with the path to your config:
+You'll also need to provide a `FreeRTOSConfig.h` file. Either create the `freertos_config` target with the path
+to your config before fetching this repository, since FreeRTOS expects that a target with that name exists, or
+an empty target with default settings will be created, and just add your include directory:
 
 ```cmake
-add_library(freertos_config INTERFACE)
 target_include_directories(freertos_config INTERFACE path/to/your/config)
 ```
 
@@ -28,24 +29,30 @@ target_include_directories(freertos_config INTERFACE path/to/your/config)
 
 ```cpp
 #include <freertos/task.hpp>
-#include <freertos/mutex.hpp>
 #include <freertos/scheduler.hpp>
 
-class MyTask : public freertos::task<512> {
+class my_task : public freertos::task {
+public:
+    my_task() : freertos::task("my_task", 1, m_stack) {}
+
 protected:
-  void run() override {
-    while (true) {
-      // Your task logic here
-      sleep(std::chrono::seconds(1));
+    void run() noexcept override
+    {
+        while (true) {
+            // Your task logic here
+            sleep(std::chrono::seconds(1));
+        }
     }
-  }
+
+private:
+    freertos::task_bstack<512> m_stack;
 };
 
 int main() {
-  MyTask task("myTask", 1);  // name, priority
-  freertos::scheduler::start();
-  return 0;
+    my_task task;
+    freertos::scheduler::start();
+    
+    // Should never be reached
+    return 1;
 }
 ```
-
-The library wraps FreeRTOS's core objects—tasks, mutexes, semaphores, queues, and scheduler control—using static allocation and `std::chrono` for time durations.
