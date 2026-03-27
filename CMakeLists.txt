@@ -16,19 +16,18 @@ if(NOT TARGET freertos_config)
     message(
     STATUS
         "freertos-cpp: Empty freertos_config target created. Please include the directory "
-        "containing FreeRTOSConfig.h to this target using \"target_include_directories\"".
+        "containing FreeRTOSConfig.h to this target using \"target_include_directories\"."
     )
 endif()
 
 include(FetchContent)
 
-# Get the latest version of the kernel from the master (main) branch.
-# If a parent project declares a more specific version before this one,
-# the more specific version will be used.
+# Get the FreeRTOS kernel. If a parent project declares a specific version before this
+# is called, that version will be used.
 FetchContent_Declare(
     freertos_kernel
     GIT_REPOSITORY  https://github.com/FreeRTOS/FreeRTOS-Kernel.git
-    GIT_TAG         main
+    GIT_TAG         V11.1.0
     GIT_SHALLOW     TRUE
 )
 FetchContent_MakeAvailable(freertos_kernel)
