@@ -35,7 +35,7 @@ public:
         task_wstack<STACK_WORDS>& stack
     ) :
         m_task_handle(xTaskCreateStatic(
-            reinterpret_cast<void (*)(void*)>(&task_entry),
+            &task_entry,
             name,
             STACK_WORDS,
             this,
@@ -52,6 +52,14 @@ public:
     /* Move operations not allowed */
     task(task&&) = delete;
     task& operator=(task&&) = delete;
+
+    /**
+     * Destructor terminates the FreeRTOS task.
+     */
+    ~task() noexcept
+    {
+        vTaskDelete(m_task_handle);
+    }
 
     /**
      * Put the task in the suspended state.
@@ -94,7 +102,7 @@ protected:
      */
     bool wait_on_notify(ticks timeout, bool clear_count = false) noexcept
     {
-        return ulTaskNotifyTake(clear_count, timeout.count());
+        return ulTaskNotifyTake(clear_count, timeout.count()) > 0;
     }
 
     /**
@@ -106,8 +114,8 @@ protected:
     }
 
     /**
-     * Sleep relative to previous wake up time
-     * @returns `true` if wakeup was delayed, false if woke up on time
+     * Sleep relative to previous wake up time.
+     * @returns `true` if wakeup was delayed, `false` otherwise
      */
     bool sleep_periodic(ticks period) noexcept
     {
@@ -129,8 +137,9 @@ private:
      * appropriate cpp style task function to allow for passing contexts to
      * the thread.
      */
-    static void task_entry(task* instance) noexcept
+    static void task_entry(void* task_instance) noexcept
     {
+        auto instance = static_cast<task*>(task_instance);
         instance->run();
 
         /* If the function ever exits, remove this task */
