@@ -56,7 +56,7 @@ public:
     /**
      * Destructor terminates the FreeRTOS task.
      */
-    ~task() noexcept
+    virtual ~task() noexcept
     {
         vTaskDelete(m_task_handle);
     }
@@ -124,6 +124,23 @@ protected:
             m_prev_wakeup = xTaskGetTickCount();
         }
         return xTaskDelayUntil(&m_prev_wakeup, period.count()) == pdTRUE;
+    }
+
+    /**
+     * Enter a critical section.
+     * @todo Add a scoped critical section object like a scoped_lock.
+     */
+    void enter_critical() noexcept
+    {
+        taskENTER_CRITICAL();
+    }
+
+    /**
+     * Exit a critical section.
+     */
+    void exit_critical() noexcept
+    {
+        taskEXIT_CRITICAL();
     }
 
 private:
