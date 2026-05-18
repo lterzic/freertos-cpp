@@ -171,4 +171,18 @@ private:
     bool m_first_period = true;
 };
 
+/**
+ * FreeRTOS task with internal stack.
+ */
+template <size_t SIZE_BYTES>
+class stack_task : public task {
+public:
+    stack_task(const char* name, size_t priority) :
+        task(name, priority, m_stack)
+    {}
+
+private:
+    task_bstack<SIZE_BYTES> m_stack {0};
+};
+
 }
