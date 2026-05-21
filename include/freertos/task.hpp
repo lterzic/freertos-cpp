@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chrono.hpp"
+#include "scheduler.hpp"
 #include <FreeRTOS.h>
 #include <task.h>
 
@@ -54,11 +55,21 @@ public:
     task& operator=(task&&) = delete;
 
     /**
-     * Destructor terminates the FreeRTOS task.
+     * Delete the task from the scheduler.
+     * @note Deleting the task here can cause problems on POSIX port if
+     * vPortEndScheduler is used and this destructor is invoked after, or
+     * if the task is deleted from outside the scheduler context (thread).
      */
     virtual ~task() noexcept
     {
-        vTaskDelete(m_task_handle);
+#if FREERTOS_PORT == GCC_POSIX
+        if (scheduler::get_state() != scheduler::state_e::NOT_STARTED) {
+            return;
+        }
+#endif
+        if (m_task_handle != nullptr) {
+            vTaskDelete(m_task_handle);
+        }
     }
 
     /**
@@ -156,11 +167,13 @@ private:
      */
     static void task_entry(void* task_instance) noexcept
     {
-        auto instance = static_cast<task*>(task_instance);
+        auto* instance = static_cast<task*>(task_instance);
         instance->run();
 
         /* If the function ever exits, remove this task */
-        vTaskDelete(instance->m_task_handle);
+        auto *handle = instance->m_task_handle;
+        instance->m_task_handle = nullptr;
+        vTaskDelete(handle);
     }
 
 private:
@@ -182,7 +195,7 @@ public:
     {}
 
 private:
-    task_bstack<SIZE_BYTES> m_stack {0};
+    task_bstack<SIZE_BYTES> m_stack;
 };
 
 }
