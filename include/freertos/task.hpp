@@ -141,7 +141,7 @@ protected:
      * Enter a critical section.
      * @todo Add a scoped critical section object like a scoped_lock.
      */
-    void enter_critical() noexcept
+    void enter_critical() const noexcept
     {
         taskENTER_CRITICAL();
     }
@@ -149,7 +149,7 @@ protected:
     /**
      * Exit a critical section.
      */
-    void exit_critical() noexcept
+    void exit_critical() const noexcept
     {
         taskEXIT_CRITICAL();
     }
